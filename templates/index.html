@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>话术示例库更新校验工具</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>话术示例库更新校验工具</h1>
+            <div class="progress-bar">
+                <span id="progress-text">请先上传Excel文件</span>
+            </div>
+            <div id="statistics-bar" class="statistics-bar" style="display: none;">
+                <div class="stat-item">
+                    <span class="stat-label">已保存-无变更：</span>
+                    <span id="stat-saved-no-change" class="stat-value stat-saved-no-change">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">已保存-有变更：</span>
+                    <span id="stat-saved-has-change" class="stat-value stat-saved-has-change">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">未保存-无变更：</span>
+                    <span id="stat-unsaved-no-change" class="stat-value stat-unsaved-no-change">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">未保存-有变更：</span>
+                    <span id="stat-unsaved-has-change" class="stat-value stat-unsaved-has-change">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 文件上传区域 -->
+        <div id="upload-section" class="section">
+            <h2>上传Excel文件</h2>
+            <div class="upload-area">
+                <input type="file" id="file-input" accept=".xlsx,.xls" style="display: none;">
+                <div class="upload-box" onclick="document.getElementById('file-input').click();">
+                    <div class="upload-icon">📁</div>
+                    <p>点击选择Excel文件或拖拽文件到此处</p>
+                    <p class="file-info">支持 .xlsx 和 .xls 格式</p>
+                </div>
+            </div>
+            <button id="upload-btn" class="btn btn-primary" disabled>上传文件</button>
+        </div>
+
+        <!-- 对话校验区域 -->
+        <div id="verification-section" class="section" style="display: none;">
+            <div class="session-header">
+                <div class="session-title">
+                    <h2>对话校验 - <span id="session-id-display">Session ID</span></h2>
+                    <div id="conversation-type" class="conversation-type"></div>
+                </div>
+                <div class="session-controls">
+                    <button id="prev-session" class="btn btn-secondary">上一通</button>
+                    <span id="session-info">第 1 通 / 共 1 通</span>
+                    <button id="next-session" class="btn btn-secondary">下一通</button>
+                    <button id="save-session" class="btn btn-success">保存</button>
+                </div>
+            </div>
+
+            <div id="session-content" class="session-content">
+                <!-- 动态生成的对话内容 -->
+            </div>
+
+            <div class="action-buttons">
+                <button id="export-btn" class="btn btn-success">生成更新后的表格</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框 -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="modal-title">编辑内容</h3>
+            <textarea id="modal-textarea" rows="5"></textarea>
+            <div class="modal-buttons">
+                <button id="modal-save" class="btn btn-primary">保存</button>
+                <button id="modal-cancel" class="btn btn-secondary">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 消息提示 -->
+    <div id="message" class="message"></div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
