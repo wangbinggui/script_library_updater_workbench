@@ -272,6 +272,72 @@ header h1 {
     cursor: not-allowed;
 }
 
+/* 筛选区域 */
+.filter-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.filter-section h3 {
+    margin: 0 0 15px 0;
+    color: #495057;
+    font-size: 16px;
+}
+
+.filter-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+}
+
+.filter-group label {
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #495057;
+    font-size: 14px;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+    outline: none;
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.filter-group button {
+    margin-top: 0;
+}
+
+/* 无结果显示 */
+.no-results {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+    font-size: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
 /* 对话校验区域 */
 .session-header {
     display: flex;

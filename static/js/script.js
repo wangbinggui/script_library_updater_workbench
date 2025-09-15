@@ -4,6 +4,12 @@ let totalSessions = 0;
 let currentSessionData = null;
 let currentEditingRow = null;
 
+// 筛选相关变量
+let filteredSessions = []; // 筛选后的session列表
+let isFiltered = false; // 是否处于筛选状态
+let originalSessionList = []; // 原始session列表
+let session_list = []; // 全局session列表（对应后端的session_list）
+
 // DOM 元素
 const fileInput = document.getElementById('file-input');
 const uploadBtn = document.getElementById('upload-btn');
@@ -29,6 +35,13 @@ const messageDiv = document.getElementById('message');
 // 新增的文件路径相关元素
 const filePathInput = document.getElementById('file-path-input');
 const loadPathBtn = document.getElementById('load-path-btn');
+
+// 筛选相关元素
+const sessionIdFilter = document.getElementById('session-id-filter');
+const categoryFilter = document.getElementById('category-filter');
+const contentFilter = document.getElementById('content-filter');
+const applyFilterBtn = document.getElementById('apply-filter');
+const clearFilterBtn = document.getElementById('clear-filter');
 
 // 事件监听器
 document.addEventListener('DOMContentLoaded', function() {
@@ -102,6 +115,39 @@ function initializeEventListeners() {
 
     // 路径加载按钮
     loadPathBtn.addEventListener('click', loadFileFromPath);
+
+    // 筛选功能事件监听器
+    applyFilterBtn.addEventListener('click', applyFilter);
+    clearFilterBtn.addEventListener('click', clearFilter);
+    
+    // 回车键触发筛选
+    sessionIdFilter.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') applyFilter();
+    });
+    contentFilter.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') applyFilter();
+    });
+}
+
+// 初始化会话数据
+async function initializeSessionData() {
+    try {
+        const response = await fetch('/get_all_sessions');
+        const data = await response.json();
+        
+        if (data.success) {
+            session_list = data.session_list;
+            // 初始化筛选相关变量
+            originalSessionList = [...session_list];
+            filteredSessions = [...originalSessionList];
+            isFiltered = false;
+            currentSessionIndex = 0;
+        } else {
+            console.error('获取会话信息失败:', data.error);
+        }
+    } catch (error) {
+        console.error('初始化会话数据失败:', error);
+    }
 }
 
 // 上传文件
@@ -128,6 +174,10 @@ async function uploadFile() {
 
         if (result.success) {
             totalSessions = result.total_sessions;
+            
+            // 获取所有会话信息
+            await initializeSessionData();
+            
             showMessage(result.message, 'success');
             uploadSection.style.display = 'none';
             verificationSection.style.display = 'block';
@@ -157,7 +207,8 @@ async function loadSession(sessionIndex) {
             return;
         }
 
-        currentSessionIndex = sessionIndex;
+        // 注意：这里的sessionIndex是原始session列表中的索引
+        // currentSessionIndex是当前显示列表（筛选或原始）中的索引
         currentSessionData = data;
         renderSession(data);
         updateNavigationButtons();
@@ -418,7 +469,7 @@ async function updateRow(rowIndex, action, manualContent = '') {
         if (result.success) {
             showMessage('更新成功', 'success');
             // 重新加载当前会话以反映更改
-            loadSession(currentSessionIndex);
+            reloadCurrentSession();
             // 更新统计信息
             updateStatistics();
         } else {
@@ -455,25 +506,58 @@ function closeModalDialog() {
     currentEditingRow = null;
 }
 
+// 重新加载当前会话（考虑筛选状态）
+function reloadCurrentSession() {
+    if (isFiltered) {
+        // 筛选模式：从筛选列表中获取session_id，然后找到原始索引
+        const sessionId = filteredSessions[currentSessionIndex];
+        const originalIndex = session_list.indexOf(sessionId);
+        loadSession(originalIndex);
+    } else {
+        // 正常模式：直接加载
+        loadSession(currentSessionIndex);
+    }
+}
+
 // 导航对话
 function navigateSession(direction) {
     const newIndex = currentSessionIndex + direction;
-    if (newIndex >= 0 && newIndex < totalSessions) {
-        loadSession(newIndex);
+    const maxSessions = isFiltered ? filteredSessions.length : totalSessions;
+    
+    if (newIndex >= 0 && newIndex < maxSessions) {
+        currentSessionIndex = newIndex;
+        
+        if (isFiltered) {
+            // 筛选模式：从筛选列表中获取session_id，然后找到原始索引
+            const sessionId = filteredSessions[newIndex];
+            const originalIndex = session_list.indexOf(sessionId);
+            loadSession(originalIndex);
+        } else {
+            // 正常模式：直接加载
+            loadSession(newIndex);
+        }
     }
 }
 
 // 更新导航按钮状态
 function updateNavigationButtons() {
+    const maxSessions = isFiltered ? filteredSessions.length : totalSessions;
     prevSessionBtn.disabled = currentSessionIndex <= 0;
-    nextSessionBtn.disabled = currentSessionIndex >= totalSessions - 1;
+    nextSessionBtn.disabled = currentSessionIndex >= maxSessions - 1;
 }
 
 // 更新进度显示
 function updateProgress() {
     const current = currentSessionIndex + 1;
-    sessionInfo.textContent = `第 ${current} 通 / 共 ${totalSessions} 通`;
-    progressText.textContent = `正在校验第 ${current} 通对话 (共 ${totalSessions} 通)`;
+    const maxSessions = isFiltered ? filteredSessions.length : totalSessions;
+    
+    if (isFiltered) {
+        sessionInfo.textContent = `第 ${current} 通 / 共 ${maxSessions} 通 (已筛选)`;
+        progressText.textContent = `正在校验第 ${current} 通对话 (筛选结果: ${maxSessions} 通)`;
+    } else {
+        sessionInfo.textContent = `第 ${current} 通 / 共 ${maxSessions} 通`;
+        progressText.textContent = `正在校验第 ${current} 通对话 (共 ${maxSessions} 通)`;
+    }
 }
 
 // 导出Excel
@@ -552,7 +636,7 @@ async function saveCurrentSession() {
         if (result.success) {
             showMessage('保存成功', 'success');
             // 重新加载当前会话以更新状态
-            loadSession(currentSessionIndex);
+            reloadCurrentSession();
             // 更新统计信息
             updateStatistics();
         } else {
@@ -602,8 +686,25 @@ function updateSaveButton(data) {
 // 更新统计信息
 async function updateStatistics() {
     try {
-        const response = await fetch('/get_statistics');
-        const stats = await response.json();
+        let response, stats;
+        
+        if (isFiltered && filteredSessions.length > 0) {
+            // 获取筛选后的统计信息
+            response = await fetch('/get_filtered_statistics', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    filtered_sessions: filteredSessions
+                })
+            });
+        } else {
+            // 获取全部统计信息
+            response = await fetch('/get_statistics');
+        }
+        
+        stats = await response.json();
         
         document.getElementById('stat-saved-no-change').textContent = stats.saved_no_change || 0;
         document.getElementById('stat-saved-has-change').textContent = stats.saved_has_change || 0;
@@ -729,6 +830,102 @@ function switchTab(tabName) {
     }
 }
 
+// 应用筛选
+async function applyFilter() {
+    const sessionIdFilterValue = sessionIdFilter.value.trim();
+    const categoryFilterValue = categoryFilter.value;
+    const contentFilterValue = contentFilter.value.trim();
+    
+    // 如果所有筛选条件都为空，清除筛选
+    if (!sessionIdFilterValue && !categoryFilterValue && !contentFilterValue) {
+        clearFilter();
+        return;
+    }
+    
+    try {
+        applyFilterBtn.disabled = true;
+        applyFilterBtn.textContent = '筛选中...';
+        
+        const response = await fetch('/filter_sessions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                session_id: sessionIdFilterValue,
+                category: categoryFilterValue,
+                content: contentFilterValue
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // 保存原始session列表（如果还没保存的话）
+            if (!isFiltered) {
+                originalSessionList = [...session_list];
+            }
+            
+            filteredSessions = data.filtered_sessions;
+            isFiltered = true;
+            
+            if (filteredSessions.length > 0) {
+                currentSessionIndex = 0;
+                
+                // 加载第一个筛选结果
+                const sessionId = filteredSessions[0];
+                const sessionIndex = session_list.indexOf(sessionId);
+                await loadSession(sessionIndex);
+                
+                updateProgress();
+                updateNavigationButtons();
+                updateStatistics();
+                
+                showMessage(`筛选完成，找到 ${filteredSessions.length} 通符合条件的对话`, 'success');
+            } else {
+                showMessage('没有找到符合条件的对话', 'info');
+                // 清空会话显示
+                sessionContent.innerHTML = '<div class="no-results">没有找到符合条件的对话</div>';
+                sessionIdDisplay.textContent = '无';
+                conversationType.textContent = '';
+                sessionInfo.textContent = '第 0 通 / 共 0 通';
+            }
+        } else {
+            showMessage(data.error, 'error');
+        }
+    } catch (error) {
+        showMessage('筛选失败: ' + error.message, 'error');
+    } finally {
+        applyFilterBtn.disabled = false;
+        applyFilterBtn.textContent = '应用筛选';
+    }
+}
+
+// 清除筛选
+function clearFilter() {
+    sessionIdFilter.value = '';
+    categoryFilter.value = '';
+    contentFilter.value = '';
+    
+    if (isFiltered) {
+        // 恢复原始数据
+        filteredSessions = [...originalSessionList];
+        isFiltered = false;
+        currentSessionIndex = 0;
+        
+        // 加载第一个会话
+        if (originalSessionList.length > 0) {
+            loadSession(0);
+            updateProgress();
+            updateNavigationButtons();
+            updateStatistics();
+        }
+        
+        showMessage('已清除筛选条件', 'success');
+    }
+}
+
+
 // 从文件路径加载文件
 async function loadFileFromPath() {
     const filePath = filePathInput.value.trim();
@@ -754,15 +951,21 @@ async function loadFileFromPath() {
         if (data.success) {
             showMessage(data.message, 'success');
             totalSessions = data.total_sessions;
-            currentSessionIndex = 0;
+            
+            // 获取所有会话信息
+            await initializeSessionData();
             
             // 隐藏上传区域，显示校验区域
             uploadSection.style.display = 'none';
             verificationSection.style.display = 'block';
+            statisticsBar.style.display = 'flex';  // 显示统计信息栏
+            
+            // 更新进度显示和统计信息
+            updateProgress();
+            updateStatistics();
             
             // 加载第一个会话
             await loadSession(0);
-            updateStatistics();
         } else {
             showMessage(data.error, 'error');
         }

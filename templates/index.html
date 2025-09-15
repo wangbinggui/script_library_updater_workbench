@@ -75,6 +75,35 @@
 
         <!-- 对话校验区域 -->
         <div id="verification-section" class="section" style="display: none;">
+            <!-- 筛选区域 -->
+            <div class="filter-section">
+                <h3>筛选对话</h3>
+                <div class="filter-controls">
+                    <div class="filter-group">
+                        <label for="session-id-filter">Session ID:</label>
+                        <input type="text" id="session-id-filter" placeholder="输入Session ID" />
+                    </div>
+                    <div class="filter-group">
+                        <label for="category-filter">分类:</label>
+                        <select id="category-filter">
+                            <option value="">全部</option>
+                            <option value="1">已保存-无变更</option>
+                            <option value="2">已保存-有变更</option>
+                            <option value="3">未保存-无变更</option>
+                            <option value="4">未保存-有变更</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="content-filter">内容包含:</label>
+                        <input type="text" id="content-filter" placeholder="搜索对话内容" />
+                    </div>
+                    <div class="filter-group">
+                        <button id="apply-filter" class="btn btn-primary">应用筛选</button>
+                        <button id="clear-filter" class="btn btn-secondary">清除筛选</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="session-header">
                 <div class="session-title">
                     <h2>对话校验 - <span id="session-id-display">Session ID</span></h2>

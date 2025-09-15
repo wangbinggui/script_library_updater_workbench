@@ -296,6 +296,43 @@ def get_statistics():
     stats = get_conversation_statistics()
     return jsonify(stats)
 
+@app.route('/get_filtered_statistics', methods=['POST'])
+def get_filtered_statistics():
+    """获取筛选后的统计信息"""
+    global current_data, saved_sessions
+    
+    if current_data is None:
+        return jsonify({'error': '请先上传文件'}), 400
+    
+    data = request.get_json()
+    filtered_sessions = data.get('filtered_sessions', [])
+    
+    try:
+        stats = {
+            'saved_no_change': 0,
+            'saved_has_change': 0,
+            'unsaved_no_change': 0,
+            'unsaved_has_change': 0
+        }
+        
+        for session_id in filtered_sessions:
+            session_data = current_data[current_data['sessionId'] == session_id]
+            conv_type = get_conversation_type(session_data, session_id)
+            
+            if conv_type == 1:
+                stats['saved_no_change'] += 1
+            elif conv_type == 2:
+                stats['saved_has_change'] += 1
+            elif conv_type == 3:
+                stats['unsaved_no_change'] += 1
+            elif conv_type == 4:
+                stats['unsaved_has_change'] += 1
+        
+        return jsonify(stats)
+        
+    except Exception as e:
+        return jsonify({'error': f'获取筛选统计信息失败: {str(e)}'}), 500
+
 @app.route('/get_progress')
 def get_progress():
     global current_session, total_sessions
@@ -305,6 +342,102 @@ def get_progress():
         'total_sessions': total_sessions,
         'statistics': stats
     })
+
+@app.route('/get_all_sessions')
+def get_all_sessions():
+    """获取所有会话的基本信息"""
+    global current_data, session_list, saved_sessions
+    
+    if current_data is None:
+        return jsonify({'error': '请先上传文件'}), 400
+    
+    try:
+        sessions_info = []
+        for session_id in session_list:
+            session_data = current_data[current_data['sessionId'] == session_id]
+            conv_type = get_conversation_type(session_data, session_id)
+            sessions_info.append({
+                'session_id': session_id,
+                'conversation_type': conv_type,
+                'is_saved': session_id in saved_sessions,
+                'row_count': len(session_data)
+            })
+        
+        return jsonify({
+            'success': True,
+            'session_list': session_list,
+            'sessions_info': sessions_info,
+            'total_sessions': len(session_list)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'获取会话信息失败: {str(e)}'}), 500
+
+@app.route('/filter_sessions', methods=['POST'])
+def filter_sessions():
+    """筛选会话"""
+    global current_data, session_list, saved_sessions
+    
+    if current_data is None:
+        return jsonify({'error': '请先上传文件'}), 400
+    
+    data = request.get_json()
+    session_id_filter = data.get('session_id', '').strip()
+    category_filter = data.get('category', '')
+    content_filter = data.get('content', '').strip().lower()
+    
+    try:
+        filtered_sessions = []
+        
+        for session_id in session_list:
+            session_data = current_data[current_data['sessionId'] == session_id]
+            
+            # 筛选条件1：Session ID
+            if session_id_filter and str(session_id).lower().find(session_id_filter.lower()) == -1:
+                continue
+            
+            # 筛选条件2：分类
+            if category_filter:
+                conv_type = get_conversation_type(session_data, session_id)
+                if str(conv_type) != category_filter:
+                    continue
+            
+            # 筛选条件3：内容包含
+            if content_filter:
+                content_match = False
+                for _, row in session_data.iterrows():
+                    # 检查原始内容、变更后内容、人工校验修正后内容
+                    if (content_filter in str(row['话术内容']).lower() or 
+                        content_filter in str(row['变更后的内容']).lower() or 
+                        content_filter in str(row['人工校验修正后的内容']).lower()):
+                        content_match = True
+                        break
+                if not content_match:
+                    continue
+            
+            filtered_sessions.append(session_id)
+        
+        # 生成筛选结果的详细信息
+        results = []
+        for session_id in filtered_sessions:
+            session_data = current_data[current_data['sessionId'] == session_id]
+            conv_type = get_conversation_type(session_data, session_id)
+            results.append({
+                'session_id': session_id,
+                'conversation_type': conv_type,
+                'is_saved': session_id in saved_sessions,
+                'row_count': len(session_data)
+            })
+        
+        return jsonify({
+            'success': True,
+            'filtered_sessions': filtered_sessions,
+            'results': results,
+            'total_filtered': len(filtered_sessions)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'筛选失败: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
