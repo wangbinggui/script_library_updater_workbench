@@ -9,9 +9,9 @@
 <body>
     <div class="container">
         <header>
-            <h1>话术示例库更新校验工具</h1>
-            <div class="progress-bar">
-                <span id="progress-text">请先上传Excel文件</span>
+            <div class="header-title">
+                <h1>话术示例库更新校验工具</h1>
+                <span id="progress-text" class="progress-inline">请先上传Excel文件</span>
             </div>
             <div id="statistics-bar" class="statistics-bar" style="display: none;">
                 <div class="stat-item">
@@ -77,30 +77,19 @@
         <div id="verification-section" class="section" style="display: none;">
             <!-- 筛选区域 -->
             <div class="filter-section">
-                <h3>筛选对话</h3>
-                <div class="filter-controls">
-                    <div class="filter-group">
-                        <label for="session-id-filter">Session ID:</label>
-                        <input type="text" id="session-id-filter" placeholder="输入Session ID" />
-                    </div>
-                    <div class="filter-group">
-                        <label for="category-filter">分类:</label>
-                        <select id="category-filter">
-                            <option value="">全部</option>
-                            <option value="1">已保存-无变更</option>
-                            <option value="2">已保存-有变更</option>
-                            <option value="3">未保存-无变更</option>
-                            <option value="4">未保存-有变更</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="content-filter">内容包含:</label>
-                        <input type="text" id="content-filter" placeholder="搜索对话内容" />
-                    </div>
-                    <div class="filter-group">
-                        <button id="apply-filter" class="btn btn-primary">应用筛选</button>
-                        <button id="clear-filter" class="btn btn-secondary">清除筛选</button>
-                    </div>
+                <div class="filter-controls-compact">
+                    <span class="filter-label">筛选:</span>
+                    <input type="text" id="session-id-filter" placeholder="Session ID" />
+                    <select id="category-filter">
+                        <option value="">全部分类</option>
+                        <option value="1">已保存-无变更</option>
+                        <option value="2">已保存-有变更</option>
+                        <option value="3">未保存-无变更</option>
+                        <option value="4">未保存-有变更</option>
+                    </select>
+                    <input type="text" id="content-filter" placeholder="内容关键词" />
+                    <button id="apply-filter" class="btn btn-primary btn-sm">应用</button>
+                    <button id="clear-filter" class="btn btn-secondary btn-sm">清除</button>
                 </div>
             </div>
 

@@ -25,10 +25,26 @@ header {
     margin-bottom: 20px;
 }
 
+.header-title {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
 header h1 {
     color: #2c3e50;
-    margin-bottom: 10px;
+    margin: 0;
     font-size: 24px;
+}
+
+.progress-inline {
+    font-size: 14px;
+    font-weight: 500;
+    color: #7f8c8d;
+    white-space: nowrap;
 }
 
 .progress-bar {
@@ -275,56 +291,88 @@ header h1 {
 /* 筛选区域 */
 .filter-section {
     margin-bottom: 20px;
-    padding: 15px;
+    padding: 10px 15px;
     background: #f8f9fa;
     border-radius: 8px;
     border: 1px solid #e9ecef;
 }
 
-.filter-section h3 {
-    margin: 0 0 15px 0;
-    color: #495057;
-    font-size: 16px;
-}
-
-.filter-controls {
+.filter-controls-compact {
     display: flex;
+    align-items: center;
+    gap: 10px;
     flex-wrap: wrap;
-    gap: 15px;
-    align-items: flex-end;
 }
 
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    min-width: 150px;
-}
-
-.filter-group label {
-    margin-bottom: 5px;
+.filter-label {
     font-weight: 500;
     color: #495057;
     font-size: 14px;
+    white-space: nowrap;
 }
 
-.filter-group input,
-.filter-group select {
-    padding: 8px 12px;
+.filter-controls-compact input,
+.filter-controls-compact select {
+    padding: 6px 10px;
     border: 1px solid #ced4da;
     border-radius: 4px;
     font-size: 14px;
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    min-width: 0;
+    flex-shrink: 1;
 }
 
-.filter-group input:focus,
-.filter-group select:focus {
+.filter-controls-compact input {
+    width: 120px;
+}
+
+.filter-controls-compact input#content-filter {
+    width: 360px;
+}
+
+.filter-controls-compact select {
+    width: 140px;
+}
+
+.filter-controls-compact input:focus,
+.filter-controls-compact select:focus {
     outline: none;
     border-color: #80bdff;
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
-.filter-group button {
-    margin-top: 0;
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .header-title {
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .progress-inline {
+        font-size: 13px;
+    }
+    
+    .filter-controls-compact {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .filter-controls-compact input,
+    .filter-controls-compact select {
+        width: auto;
+        min-width: 100px;
+    }
+    
+    .filter-controls-compact input#content-filter {
+        width: 100%;
+        min-width: 200px;
+    }
 }
 
 /* 无结果显示 */
