@@ -35,16 +35,42 @@
 
         <!-- 文件上传区域 -->
         <div id="upload-section" class="section">
-            <h2>上传Excel文件</h2>
-            <div class="upload-area">
-                <input type="file" id="file-input" accept=".xlsx,.xls" style="display: none;">
-                <div class="upload-box" onclick="document.getElementById('file-input').click();">
-                    <div class="upload-icon">📁</div>
-                    <p>点击选择Excel文件或拖拽文件到此处</p>
-                    <p class="file-info">支持 .xlsx 和 .xls 格式</p>
-                </div>
+            <h2>加载Excel文件</h2>
+            
+            <!-- 选项卡 -->
+            <div class="upload-tabs">
+                <button class="tab-btn active" onclick="switchTab('upload')">文件上传</button>
+                <button class="tab-btn" onclick="switchTab('path')">文件路径</button>
             </div>
-            <button id="upload-btn" class="btn btn-primary" disabled>上传文件</button>
+            
+            <!-- 文件上传选项卡 -->
+            <div id="upload-tab" class="tab-content active">
+                <div class="upload-area">
+                    <input type="file" id="file-input" accept=".xlsx,.xls" style="display: none;">
+                    <div class="upload-box" onclick="document.getElementById('file-input').click();">
+                        <div class="upload-icon">📁</div>
+                        <p>点击选择Excel文件或拖拽文件到此处</p>
+                        <p class="file-info">支持 .xlsx 和 .xls 格式</p>
+                    </div>
+                </div>
+                <button id="upload-btn" class="btn btn-primary" disabled>上传文件</button>
+            </div>
+            
+            <!-- 文件路径选项卡 -->
+            <div id="path-tab" class="tab-content">
+                <div class="path-input-area">
+                    <div class="input-group">
+                        <label for="file-path-input">文件路径：</label>
+                        <input type="text" id="file-path-input" placeholder="请输入Excel文件的完整路径，例如：C:\Users\username\documents\data.xlsx" />
+                        <button id="browse-btn" class="btn btn-secondary" onclick="document.getElementById('file-input').click();">浏览...</button>
+                    </div>
+                    <div class="path-info">
+                        <p>🔍 支持绝对路径和相对路径</p>
+                        <p>📝 示例：C:\data\example.xlsx 或 ./data/example.xlsx</p>
+                    </div>
+                </div>
+                <button id="load-path-btn" class="btn btn-primary" disabled>加载文件</button>
+            </div>
         </div>
 
         <!-- 对话校验区域 -->

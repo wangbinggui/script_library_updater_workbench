@@ -88,10 +88,47 @@ saved_sessions = set()  # 存储已保存的会话ID
 def index():
     return render_template('index.html')
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
+def process_excel_file(filepath):
+    """处理Excel文件的公共逻辑"""
     global current_data, current_session, total_sessions, session_list, saved_sessions
     
+    try:
+        # 读取Excel文件
+        df = pd.read_excel(filepath)
+        
+        # 验证必需的列
+        required_columns = ['sessionId', '角色', '话术内容', '变更后的内容', '更新情况', 'LLM完整输出', '更新结果检查', '更新结果检查详情']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        
+        if missing_columns:
+            return {'error': f'缺少必需的列: {", ".join(missing_columns)}'}
+        
+        # 补充变更后的内容（非空不变，空的使用话术内容填充）
+        df['变更后的内容'] = df['变更后的内容'].fillna(df['话术内容'])
+        df.loc[df['变更后的内容'] == '', '变更后的内容'] = df.loc[df['变更后的内容'] == '', '话术内容']
+        
+        # 添加人工校验修正后的内容列
+        df['人工校验修正后的内容'] = df['变更后的内容'].copy()
+        
+        current_data = df
+        
+        # 获取所有unique的sessionId
+        session_list = df['sessionId'].unique().tolist()
+        total_sessions = len(session_list)
+        current_session = 0
+        saved_sessions = set()  # 重置已保存会话
+        
+        return {
+            'success': True,
+            'total_sessions': total_sessions,
+            'message': f'文件加载成功，共有 {total_sessions} 通对话'
+        }
+        
+    except Exception as e:
+        return {'error': f'文件处理错误: {str(e)}'}
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
     if 'file' not in request.files:
         return jsonify({'error': '没有选择文件'}), 400
     
@@ -100,47 +137,44 @@ def upload_file():
         return jsonify({'error': '没有选择文件'}), 400
     
     if file and file.filename.endswith(('.xlsx', '.xls')):
-        try:
-            # 保存上传的文件
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
-            
-            # 读取Excel文件
-            df = pd.read_excel(filepath)
-            
-            # 验证必需的列
-            required_columns = ['sessionId', '角色', '话术内容', '变更后的内容', '更新情况', 'LLM完整输出', '更新结果检查', '更新结果检查详情']
-            missing_columns = [col for col in required_columns if col not in df.columns]
-            
-            if missing_columns:
-                return jsonify({'error': f'缺少必需的列: {", ".join(missing_columns)}'}), 400
-            
-            # 补充变更后的内容（非空不变，空的使用话术内容填充）
-            df['变更后的内容'] = df['变更后的内容'].fillna(df['话术内容'])
-            df.loc[df['变更后的内容'] == '', '变更后的内容'] = df.loc[df['变更后的内容'] == '', '话术内容']
-            
-            # 添加人工校验修正后的内容列
-            df['人工校验修正后的内容'] = df['变更后的内容'].copy()
-            
-            current_data = df
-            
-            # 获取所有unique的sessionId
-            session_list = df['sessionId'].unique().tolist()
-            total_sessions = len(session_list)
-            current_session = 0
-            saved_sessions = set()  # 重置已保存会话
-            
-            return jsonify({
-                'success': True,
-                'total_sessions': total_sessions,
-                'message': f'文件上传成功，共有 {total_sessions} 通对话'
-            })
-            
-        except Exception as e:
-            return jsonify({'error': f'文件处理错误: {str(e)}'}), 500
+        # 保存上传的文件
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        
+        # 处理Excel文件
+        result = process_excel_file(filepath)
+        if 'error' in result:
+            return jsonify(result), 400 if '缺少必需的列' in result['error'] else 500
+        
+        return jsonify(result)
     
     return jsonify({'error': '请上传Excel文件(.xlsx或.xls)'}), 400
+
+@app.route('/load_path', methods=['POST'])
+def load_file_from_path():
+    data = request.get_json()
+    if not data or 'file_path' not in data:
+        return jsonify({'error': '缺少文件路径参数'}), 400
+    
+    file_path = data['file_path'].strip()
+    if not file_path:
+        return jsonify({'error': '文件路径不能为空'}), 400
+    
+    # 检查文件是否存在
+    if not os.path.exists(file_path):
+        return jsonify({'error': f'文件不存在: {file_path}'}), 400
+    
+    # 检查文件扩展名
+    if not file_path.lower().endswith(('.xlsx', '.xls')):
+        return jsonify({'error': '请选择Excel文件(.xlsx或.xls)'}), 400
+    
+    # 处理Excel文件
+    result = process_excel_file(file_path)
+    if 'error' in result:
+        return jsonify(result), 400 if '缺少必需的列' in result['error'] else 500
+    
+    return jsonify(result)
 
 @app.route('/get_session/<int:session_index>')
 def get_session(session_index):

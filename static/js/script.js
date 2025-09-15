@@ -26,6 +26,10 @@ const modalCancel = document.getElementById('modal-cancel');
 const closeModal = document.querySelector('.close');
 const messageDiv = document.getElementById('message');
 
+// 新增的文件路径相关元素
+const filePathInput = document.getElementById('file-path-input');
+const loadPathBtn = document.getElementById('load-path-btn');
+
 // 事件监听器
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
@@ -89,6 +93,15 @@ function initializeEventListeners() {
             fileInput.dispatchEvent(event);
         }
     });
+
+    // 文件路径输入
+    filePathInput.addEventListener('input', function() {
+        const path = this.value.trim();
+        loadPathBtn.disabled = !path;
+    });
+
+    // 路径加载按钮
+    loadPathBtn.addEventListener('click', loadFileFromPath);
 }
 
 // 上传文件
@@ -690,4 +703,74 @@ function showMessage(text, type = 'info') {
     setTimeout(() => {
         messageDiv.classList.remove('show');
     }, 3000);
+}
+
+// 选项卡切换功能
+function switchTab(tabName) {
+    // 移除所有选项卡的active类
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+
+    // 激活当前选项卡
+    document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+
+    // 重置状态
+    if (tabName === 'upload') {
+        // 切换到上传选项卡时重置文件选择状态
+        uploadBtn.disabled = !fileInput.files[0];
+    } else if (tabName === 'path') {
+        // 切换到路径选项卡时重置路径输入状态
+        loadPathBtn.disabled = !filePathInput.value.trim();
+    }
+}
+
+// 从文件路径加载文件
+async function loadFileFromPath() {
+    const filePath = filePathInput.value.trim();
+    if (!filePath) {
+        showMessage('请输入文件路径', 'error');
+        return;
+    }
+
+    loadPathBtn.disabled = true;
+    loadPathBtn.textContent = '加载中...';
+
+    try {
+        const response = await fetch('/load_path', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ file_path: filePath })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showMessage(data.message, 'success');
+            totalSessions = data.total_sessions;
+            currentSessionIndex = 0;
+            
+            // 隐藏上传区域，显示校验区域
+            uploadSection.style.display = 'none';
+            verificationSection.style.display = 'block';
+            
+            // 加载第一个会话
+            await loadSession(0);
+            updateStatistics();
+        } else {
+            showMessage(data.error, 'error');
+        }
+    } catch (error) {
+        console.error('路径加载错误:', error);
+        showMessage('路径加载失败，请检查文件路径是否正确', 'error');
+    } finally {
+        loadPathBtn.disabled = false;
+        loadPathBtn.textContent = '加载文件';
+    }
 }
